@@ -11,7 +11,7 @@ from core.vector_store.pinecone_store import get_pinecone_store
 from utils.logger import get_logger
 
 LLM_MODEL = "gpt-4o-mini"
-SIMILARITY_SCORE_THRESHOLD = 0.65
+SIMILARITY_SCORE_THRESHOLD = 0.3
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -142,7 +142,7 @@ async def search_code(request: SearchRequest):
             
             # Filter out low-relevance results
             if score < SIMILARITY_SCORE_THRESHOLD:
-                logger.debug(f"Filtering out low-score result: {score:.3f}")
+                logger.info(f"Filtering out low-score result: {score:.3f} (threshold: {SIMILARITY_SCORE_THRESHOLD})")
                 continue
             
             metadata = result.get("metadata", {})
