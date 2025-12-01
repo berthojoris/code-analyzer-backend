@@ -9,7 +9,7 @@ import yaml
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
-from ..cicd.integrator import CIPlatform, CIPipeline, CIJob
+from .types import CIPlatform, CIPipeline, CIJob
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

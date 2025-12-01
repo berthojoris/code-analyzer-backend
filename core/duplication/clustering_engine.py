@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 import hashlib
 
-from .detector import DuplicationGroup, DuplicateBlock, DuplicationType
+from .types import DuplicationGroup, DuplicateBlock, DuplicationType
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

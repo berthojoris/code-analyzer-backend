@@ -3,6 +3,7 @@ Jenkins integration for pipeline analysis
 Supports Jenkinsfile analysis and job monitoring
 """
 
+from typing import Dict, Any
 from pathlib import Path
 from utils.logger import get_logger
 

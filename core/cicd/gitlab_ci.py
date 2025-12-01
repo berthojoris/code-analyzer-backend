@@ -4,6 +4,7 @@ Supports .gitlab-ci.yml analysis and job monitoring
 """
 
 import yaml
+from typing import Dict, Any
 from pathlib import Path
 from utils.logger import get_logger
 
