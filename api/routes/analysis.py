@@ -17,7 +17,7 @@ from core.analysis import LintingAnalyzer, QualityAnalyzer
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/api/analysis", tags=["analysis"])
+router = APIRouter(tags=["analysis"])
 
 
 class AnalysisRequest(BaseModel):

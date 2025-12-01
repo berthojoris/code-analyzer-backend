@@ -12,7 +12,7 @@ from core.database.models import QualityMetric, Repository
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/api/quality", tags=["quality"])
+router = APIRouter(tags=["quality"])
 
 
 class QualityMetricResponse(BaseModel):
@@ -49,18 +49,29 @@ class QualityOverviewResponse(BaseModel):
     quality_distribution: Dict[str, Any]
 
 
-@router.get("/{repository_id}", response_model=QualityOverviewResponse)
-async def get_quality_metrics(repository_id: int, db_session = Depends(get_db_session)):
+def get_repository_by_owner_repo(owner: str, repo_name: str, db_session):
+    """Get repository by owner and repo name from GitHub URL."""
+    repositories = db_session.query(Repository).all()
+    
+    for repo in repositories:
+        if repo.url and f"github.com/{owner}/{repo_name}" in repo.url:
+            return repo
+    
+    return None
+
+
+@router.get("/quality/{owner}/{repo_name}", response_model=QualityOverviewResponse)
+async def get_quality_metrics(owner: str, repo_name: str, db_session = Depends(get_db_session)):
     """Get quality metrics overview for a repository."""
-    repository = db_session.query(Repository).filter_by(id=repository_id).first()
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
-    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository_id).all()
+    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository.id).all()
 
     if not metrics:
         return QualityOverviewResponse(
-            repository_id=repository_id,
+            repository_id=repository.id,
             repository_name=repository.name,
             total_files=0,
             analyzed_files=0,
@@ -108,7 +119,7 @@ async def get_quality_metrics(repository_id: int, db_session = Depends(get_db_se
     }
 
     return QualityOverviewResponse(
-        repository_id=repository_id,
+        repository_id=repository.id,
         repository_name=repository.name,
         total_files=total_files,
         analyzed_files=analyzed_files,
@@ -123,14 +134,14 @@ async def get_quality_metrics(repository_id: int, db_session = Depends(get_db_se
     )
 
 
-@router.get("/{repository_id}/complexity", response_model=List[QualityMetricResponse])
-async def get_complexity_metrics(repository_id: int, db_session = Depends(get_db_session)):
+@router.get("/quality/{owner}/{repo_name}/complexity", response_model=List[QualityMetricResponse])
+async def get_complexity_metrics(owner: str, repo_name: str, db_session = Depends(get_db_session)):
     """Get complexity metrics for a repository."""
-    repository = db_session.query(Repository).filter_by(id=repository_id).first()
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
-    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository_id).all()
+    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository.id).all()
 
     return [
         QualityMetricResponse(
@@ -153,14 +164,14 @@ async def get_complexity_metrics(repository_id: int, db_session = Depends(get_db
     ]
 
 
-@router.get("/{repository_id}/maintainability", response_model=List[QualityMetricResponse])
-async def get_maintainability_metrics(repository_id: int, db_session = Depends(get_db_session)):
+@router.get("/quality/{owner}/{repo_name}/maintainability", response_model=List[QualityMetricResponse])
+async def get_maintainability_metrics(owner: str, repo_name: str, db_session = Depends(get_db_session)):
     """Get maintainability metrics for a repository."""
-    repository = db_session.query(Repository).filter_by(id=repository_id).first()
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
-    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository_id).all()
+    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository.id).all()
 
     return [
         QualityMetricResponse(
@@ -183,19 +194,20 @@ async def get_maintainability_metrics(repository_id: int, db_session = Depends(g
     ]
 
 
-@router.get("/{repository_id}/trends", response_model=Dict[str, Any])
+@router.get("/quality/{owner}/{repo_name}/trends", response_model=Dict[str, Any])
 async def get_quality_trends(
-    repository_id: int,
+    owner: str,
+    repo_name: str,
     db_session = Depends(get_db_session)
 ):
     """Get quality trends over time for a repository."""
-    repository = db_session.query(Repository).filter_by(id=repository_id).first()
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
     # This would normally query historical data
     # For now, return current metrics with trend indicators
-    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository_id).all()
+    metrics = db_session.query(QualityMetric).filter_by(repository_id=repository.id).all()
 
     if not metrics:
         return {"message": "No quality metrics available for trends analysis"}

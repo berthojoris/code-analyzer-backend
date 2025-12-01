@@ -1,7 +1,7 @@
 """
 Database connection and session management.
 """
-from typing import Generator
+from typing import Generator, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -14,8 +14,8 @@ class DatabaseManager:
     """Manager for database connections and sessions."""
 
     def __init__(self):
-        self.engine = None
-        self.SessionLocal = None
+        self.engine: Optional[create_engine] = None
+        self.SessionLocal: Optional[sessionmaker] = None
 
     def initialize(self):
         """Initialize database engine and session factory."""
@@ -61,7 +61,7 @@ class DatabaseManager:
         if self.engine is None:
             self.initialize()
 
-        session = self.SessionLocal()
+        session = self.SessionLocal()  # type: ignore
         try:
             yield session
         finally:
@@ -74,7 +74,7 @@ db_manager = DatabaseManager()
 
 def get_db_session() -> Generator[Session, None, None]:
     """Dependency function to get database session."""
-    return db_manager.get_db_session()
+    yield from db_manager.get_session()
 
 
 def initialize_database():

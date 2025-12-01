@@ -72,8 +72,6 @@ plotly>=5.15.0         # Interactive charts and dashboards
 pandas>=2.0.0          # Data manipulation for trend analysis
 openpyxl>=3.1.0        # Excel file support for CSV export
 
-# Database Core
-sqlalchemy>=2.0.0      # ORM and database toolkit (FIXED)
 
 # Additional Utilities
 subprocess32>=3.5.0    # Process management for external tools

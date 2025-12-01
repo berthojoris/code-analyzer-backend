@@ -12,7 +12,7 @@ from core.database.models import LintingIssue, Repository
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/api/linting", tags=["linting"])
+router = APIRouter(tags=["linting"])
 
 
 class LintingIssueResponse(BaseModel):
@@ -41,16 +41,32 @@ class LintingIssuesResponse(BaseModel):
     issues: List[LintingIssueResponse]
 
 
-@router.get("/{repository_id}", response_model=LintingIssuesResponse)
+def get_repository_by_owner_repo(owner: str, repo_name: str, db_session):
+    """Get repository by owner and repo name from GitHub URL."""
+    repositories = db_session.query(Repository).all()
+    
+    for repo in repositories:
+        if repo.url and f"github.com/{owner}/{repo_name}" in repo.url:
+            return repo
+    
+    return None
+
+
+@router.get("/linting/{owner}/{repo_name}", response_model=LintingIssuesResponse)
 async def get_linting_issues(
-    repository_id: int,
+    owner: str,
+    repo_name: str,
     severity: Optional[str] = Query(None, description="Filter by severity"),
     tool: Optional[str] = Query(None, description="Filter by tool"),
     file_path: Optional[str] = Query(None, description="Filter by file path"),
     db_session = Depends(get_db_session)
 ):
     """Get all linting issues for a repository with optional filters."""
-    query = db_session.query(LintingIssue).filter_by(repository_id=repository_id)
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+
+    query = db_session.query(LintingIssue).filter_by(repository_id=repository.id)
 
     # Apply filters
     if severity:
@@ -59,11 +75,6 @@ async def get_linting_issues(
         query = query.filter_by(tool=tool)
     if file_path:
         query = query.filter(LintingIssue.file_path.like(f"%{file_path}%"))
-
-    # Get repository info
-    repository = query.first().repository if query.first() else None
-    if not repository:
-        raise HTTPException(status_code=404, detail="Repository not found")
 
     # Get all issues
     issues = query.all()
@@ -92,7 +103,7 @@ async def get_linting_issues(
     ]
 
     return LintingIssuesResponse(
-        repository_id=repository_id,
+        repository_id=repository.id,
         repository_name=repository.name,
         total_issues=len(issues),
         error_count=error_count,
@@ -102,19 +113,20 @@ async def get_linting_issues(
     )
 
 
-@router.get("/{repository_id}/file/{file_path:path}", response_model=List[LintingIssueResponse])
+@router.get("/linting/{owner}/{repo_name}/file/{file_path:path}", response_model=List[LintingIssueResponse])
 async def get_file_linting_issues(
-    repository_id: int,
+    owner: str,
+    repo_name: str,
     file_path: str,
     db_session = Depends(get_db_session)
 ):
     """Get linting issues for a specific file."""
-    repository = db_session.query(Repository).filter_by(id=repository_id).first()
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
     issues = db_session.query(LintingIssue).filter_by(
-        repository_id=repository_id,
+        repository_id=repository.id,
         file_path=file_path
     ).all()
 
@@ -136,19 +148,20 @@ async def get_file_linting_issues(
     ]
 
 
-@router.get("/{repository_id}/severity/{severity}", response_model=List[LintingIssueResponse])
+@router.get("/linting/{owner}/{repo_name}/severity/{severity}", response_model=List[LintingIssueResponse])
 async def get_issues_by_severity(
-    repository_id: int,
+    owner: str,
+    repo_name: str,
     severity: str,
     db_session = Depends(get_db_session)
 ):
     """Get linting issues filtered by severity."""
-    repository = db_session.query(Repository).filter_by(id=repository_id).first()
+    repository = get_repository_by_owner_repo(owner, repo_name, db_session)
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
 
     issues = db_session.query(LintingIssue).filter_by(
-        repository_id=repository_id,
+        repository_id=repository.id,
         severity=severity
     ).all()
 

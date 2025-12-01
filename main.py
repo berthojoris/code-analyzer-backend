@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # Import all route modules
-from api.routes import index, query, analysis, linting, quality, security
+from api.routes import index, query, analysis, linting, quality, security, dashboard
 from utils.logger import get_logger
 from core.config import settings
 from core.database import initialize_database
@@ -49,12 +49,12 @@ app.include_router(linting.router, prefix="/api", tags=["linting"])
 app.include_router(quality.router, prefix="/api", tags=["quality"])
 app.include_router(security.router, prefix="/api", tags=["security"])
 
-# Add new route modules for Phase 2 & 3 features (would be uncommented when routes are created)
-# from api.routes import github, duplication, cicd, dashboard
+# Add new route modules for Phase 2 & 3 features
+# from api.routes import github, duplication, cicd
 # app.include_router(github.router, prefix="/api", tags=["github"])
 # app.include_router(duplication.router, prefix="/api", tags=["duplication"])
 # app.include_router(cicd.router, prefix="/api", tags=["cicd"])
-# app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
+app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 
 
 @app.get("/health")

@@ -8,10 +8,12 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import asyncio
 
+from core.database import get_db_session
+from core.database.models import Repository
 from core.security.scanner_stub import SecurityScanner
 from utils.logger import get_logger
 
-router = APIRouter()
+router = APIRouter(tags=["security"])
 logger = get_logger(__name__)
 
 
@@ -47,7 +49,18 @@ class SecurityReport(BaseModel):
     scan_duration: float
 
 
-@router.post("/security/scan", response_model=Dict[str, Any])
+def get_repository_by_owner_repo(owner: str, repo_name: str, db_session):
+    """Get repository by owner and repo name from GitHub URL."""
+    repositories = db_session.query(Repository).all()
+    
+    for repo in repositories:
+        if repo.url and f"github.com/{owner}/{repo_name}" in repo.url:
+            return repo
+    
+    return None
+
+
+@router.post("/scan", response_model=Dict[str, Any])
 async def trigger_security_scan(request: SecurityScanRequest, background_tasks: BackgroundTasks):
     """Trigger a security scan for a repository"""
     try:
@@ -90,9 +103,10 @@ async def trigger_security_scan(request: SecurityScanRequest, background_tasks: 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/security/{repo_id}/issues", response_model=List[SecurityIssue])
+@router.get("/security/{owner}/{repo_name}/issues", response_model=List[SecurityIssue])
 async def get_security_issues(
-    repo_id: str,
+    owner: str,
+    repo_name: str,
     severity: Optional[str] = None,
     tool: Optional[str] = None,
     limit: int = Query(default=100, ge=1, le=1000)
@@ -101,7 +115,7 @@ async def get_security_issues(
     try:
         # This would fetch from your database
         # For now, return empty list
-        logger.info(f"Retrieved security issues for repository: {repo_id}")
+        logger.info(f"Retrieved security issues for repository: {owner}/{repo_name}")
 
         return []
 
@@ -110,15 +124,15 @@ async def get_security_issues(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/security/{repo_id}/report")
-async def get_security_report(repo_id: str):
+@router.get("/security/{owner}/{repo_name}/report")
+async def get_security_report(owner: str, repo_name: str):
     """Get comprehensive security report for a repository"""
     try:
         # This would fetch from your database
-        logger.info(f"Retrieved security report for repository: {repo_id}")
+        logger.info(f"Retrieved security report for repository: {owner}/{repo_name}")
 
         return {
-            "repo_id": repo_id,
+            "repo_id": f"{owner}/{repo_name}",
             "status": "completed",
             "timestamp": "2024-01-01T00:00:00Z",
             "total_issues": 0,
@@ -137,15 +151,15 @@ async def get_security_report(repo_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/security/{repo_id}/summary")
-async def get_security_summary(repo_id: str):
+@router.get("/security/{owner}/{repo_name}/summary")
+async def get_security_summary(owner: str, repo_name: str):
     """Get security summary for a repository"""
     try:
         # This would calculate from database
-        logger.info(f"Retrieved security summary for repository: {repo_id}")
+        logger.info(f"Retrieved security summary for repository: {owner}/{repo_name}")
 
         return {
-            "repo_id": repo_id,
+            "repo_id": f"{owner}/{repo_name}",
             "security_score": 85,
             "total_issues": 0,
             "critical_issues": 0,
