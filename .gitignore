@@ -56,3 +56,5 @@ Thumbs.db
 *.log
 logs/
 NOTE.txt
+/.claude
+AGENTS.md
