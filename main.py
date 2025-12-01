@@ -2,6 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
+from dotenv import load_dotenv
+
+from api.routes import index, query, analysis, linting, quality
+from utils.logger import get_logger
+from core.config import settings
+from core.database import initialize_database
+from contextlib import asynccontextmanager
+import os
 
 from dotenv import load_dotenv
 
@@ -18,6 +26,10 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("Starting code-analyzer-backend")
     settings.validate()
+
+    # Initialize database
+    initialize_database()
+
     yield
     logger.info("Shutting down code-analyzer-backend")
 
@@ -39,6 +51,9 @@ app.add_middleware(
 
 app.include_router(index.router, prefix="/api", tags=["indexing"])
 app.include_router(query.router, prefix="/api", tags=["search"])
+app.include_router(analysis.router, prefix="/api", tags=["analysis"])
+app.include_router(linting.router, prefix="/api", tags=["linting"])
+app.include_router(quality.router, prefix="/api", tags=["quality"])
 
 
 @app.get("/health")

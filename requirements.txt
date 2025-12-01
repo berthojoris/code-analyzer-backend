@@ -29,3 +29,51 @@ pydantic-settings>=2.1.0
 
 # Logging and utilities
 structlog>=24.1.0
+
+# Static Analysis Tools
+ruff>=0.1.0           # Python linting and formatting
+flake8>=6.0.0         # Multi-language linting
+black>=23.0.0         # Python code formatting
+
+# Code Quality Analysis
+radon>=6.0.0          # Python code metrics and complexity
+mccabe>=0.7.0         # Cyclomatic complexity analysis
+lizard>=1.17.0        # Multi-language complexity analysis
+
+# Database (PostgreSQL/SQLite)
+sqlalchemy>=2.0.0      # ORM and database toolkit
+alembic>=1.12.0        # Database migration tool
+psycopg2-binary>=2.9.0 # PostgreSQL driver (production)
+sqlite3                # SQLite driver (development)
+
+# Security Scanning Tools
+bandit>=1.7.5          # Python security vulnerability scanner
+safety>=3.0.0          # Python dependency vulnerability checker
+semgrep>=1.65.0        # Multi-language static analysis security tool
+
+# GitHub Integration
+PyGithub>=2.1.1        # GitHub API client library
+aiohttp>=3.9.0         # Async HTTP client for GitHub API
+
+# Duplicate Code Detection
+jscpd>=3.5.0           # JavaScript/TypeScript duplicate code detector
+dill>=0.3.7            # Serialization for complex data structures
+numpy>=1.24.0          # Numerical computing for similarity analysis
+scipy>=1.10.0          # Scientific computing for clustering algorithms
+
+# CI/CD Integration
+junitparser>=3.1.0     # JUnit XML parser for test results
+coverage>=7.2.0        # Code coverage analysis
+pytest-cov>=4.1.0      # Coverage reporting (moved from testing)
+
+# Report Generation and Export
+reportlab>=4.0.0       # PDF report generation
+matplotlib>=3.7.0      # Charts and graphs visualization
+plotly>=5.15.0         # Interactive charts and dashboards
+pandas>=2.0.0          # Data manipulation for trend analysis
+openpyxl>=3.1.0        # Excel file support for CSV export
+
+# Additional Utilities
+subprocess32>=3.5.0    # Process management for external tools
+click>=8.1.0           # CLI utilities for tool integration
+toml>=0.10.2           # TOML file parsing for pyproject.toml
