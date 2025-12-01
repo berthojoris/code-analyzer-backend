@@ -24,27 +24,120 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
+def extract_semantic_keywords(code: str, name: str = "") -> list[str]:
+    """Extract semantic keywords from code for better searchability."""
+    keywords = []
+    
+    # Extract from name (e.g., handleUserLogin -> handle, user, login)
+    if name:
+        # Split camelCase and snake_case
+        import re
+        words = re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', name)
+        words.extend(name.split('_'))
+        keywords.extend([w.lower() for w in words if len(w) > 2])
+    
+    # Common patterns to extract
+    patterns = {
+        r'import\s+[\w.]+': 'imports',
+        r'from\s+[\w.]+': 'imports from',
+        r'fetch|axios|http|request': 'HTTP request API call',
+        r'useState|useEffect|useContext': 'React hooks state management',
+        r'async|await|Promise': 'asynchronous code',
+        r'try|catch|except': 'error handling',
+        r'class\s+\w+': 'class definition',
+        r'def\s+\w+|function\s+\w+': 'function definition',
+        r'router|route|endpoint': 'routing endpoint',
+        r'database|query|sql|mongo': 'database operations',
+        r'auth|login|logout|token|jwt': 'authentication',
+        r'test|spec|describe|it\(': 'testing',
+        r'render|component|jsx|tsx': 'UI component rendering',
+        r'click|submit|change|event': 'event handling',
+        r'map|filter|reduce|forEach': 'array operations',
+        r'socket|websocket|realtime': 'realtime websocket',
+        r'config|settings|env': 'configuration',
+    }
+    
+    import re
+    code_lower = code.lower()
+    for pattern, description in patterns.items():
+        if re.search(pattern, code, re.IGNORECASE):
+            keywords.append(description)
+    
+    return list(set(keywords))
+
+
+def generate_code_description(chunk: CodeChunk) -> str:
+    """Generate a natural language description of what the code does."""
+    desc_parts = []
+    
+    # Describe the type
+    type_descriptions = {
+        'function': 'A function',
+        'method': 'A method',
+        'class': 'A class',
+        'module': 'A module/file',
+        'import': 'Import statements',
+        'variable': 'Variable declarations',
+        'interface': 'A type interface',
+        'type': 'A type definition',
+        'component': 'A UI component',
+    }
+    
+    type_desc = type_descriptions.get(chunk.chunk_type, f'A {chunk.chunk_type}')
+    
+    if chunk.name:
+        # Convert name to readable format
+        import re
+        readable_name = re.sub(r'([A-Z])', r' \1', chunk.name)
+        readable_name = readable_name.replace('_', ' ').strip()
+        desc_parts.append(f"{type_desc} named '{chunk.name}' ({readable_name.lower()})")
+    else:
+        desc_parts.append(type_desc)
+    
+    # Add language
+    desc_parts.append(f"written in {chunk.language}")
+    
+    # Add file context
+    file_name = chunk.file_path.split('/')[-1] if '/' in chunk.file_path else chunk.file_path.split('\\')[-1]
+    desc_parts.append(f"in file {file_name}")
+    
+    # Extract semantic keywords
+    keywords = extract_semantic_keywords(chunk.content, chunk.name or "")
+    if keywords:
+        desc_parts.append(f"that handles: {', '.join(keywords[:5])}")
+    
+    return ' '.join(desc_parts)
+
+
 def build_embedding_text(chunk: CodeChunk) -> str:
     """Build semantically enriched text for embedding.
     
-    Combines metadata with code content to improve vector search relevance.
+    Creates a hybrid representation combining:
+    1. Natural language description (for semantic matching with user queries)
+    2. Key semantic keywords (for concept matching)
+    3. The actual code (for code-specific searches)
     """
     parts = []
     
-    # Add language context
-    parts.append(f"Language: {chunk.language}")
+    # 1. Natural language description - this is key for matching user queries
+    description = generate_code_description(chunk)
+    parts.append(f"Description: {description}")
     
-    # Add file path for context
+    # 2. Semantic keywords for concept matching
+    keywords = extract_semantic_keywords(chunk.content, chunk.name or "")
+    if keywords:
+        parts.append(f"Concepts: {', '.join(keywords)}")
+    
+    # 3. Structured metadata
+    parts.append(f"Type: {chunk.chunk_type}")
+    if chunk.name:
+        parts.append(f"Name: {chunk.name}")
+    parts.append(f"Language: {chunk.language}")
     parts.append(f"File: {chunk.file_path}")
     
-    # Add chunk type and name if available
-    if chunk.name:
-        parts.append(f"{chunk.chunk_type.capitalize()} name: {chunk.name}")
-    else:
-        parts.append(f"Type: {chunk.chunk_type}")
-    
-    # Add the actual code
-    parts.append(f"Code:\n{chunk.content}")
+    # 4. The actual code (truncated for embedding efficiency)
+    code_preview = chunk.content[:800] if len(chunk.content) > 800 else chunk.content
+    parts.append(f"Code:\n{code_preview}")
     
     return "\n".join(parts)
 

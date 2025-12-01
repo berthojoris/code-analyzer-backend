@@ -11,24 +11,71 @@ from core.vector_store.pinecone_store import get_pinecone_store
 from utils.logger import get_logger
 
 LLM_MODEL = "gpt-4o-mini"
-SIMILARITY_SCORE_THRESHOLD = 0.3
+SIMILARITY_SCORE_THRESHOLD = 0.25
 
 logger = get_logger(__name__)
 router = APIRouter()
 
 
+def extract_query_concepts(query: str) -> list[str]:
+    """Extract key concepts from user query for better matching."""
+    import re
+    
+    concepts = []
+    query_lower = query.lower()
+    
+    # Map common user intents to code concepts
+    concept_mappings = {
+        r'framework|library|dependencies': ['imports', 'dependencies', 'package.json', 'requirements'],
+        r'api|endpoint|route': ['routing endpoint', 'HTTP request API call', 'router'],
+        r'auth|login|sign.?in|sign.?up': ['authentication', 'login', 'auth', 'token'],
+        r'database|db|store|persist': ['database operations', 'query', 'model'],
+        r'test|spec': ['testing', 'test', 'spec'],
+        r'component|ui|render|display': ['UI component rendering', 'component', 'render'],
+        r'state|redux|context|store': ['React hooks state management', 'state', 'store'],
+        r'async|promise|await': ['asynchronous code', 'async', 'await'],
+        r'error|exception|catch': ['error handling', 'try', 'catch'],
+        r'websocket|realtime|socket': ['realtime websocket', 'socket'],
+        r'config|setting|environment': ['configuration', 'config', 'env'],
+        r'style|css|theme': ['styling', 'css', 'theme'],
+        r'hook|useEffect|useState': ['React hooks state management', 'hooks'],
+    }
+    
+    for pattern, related_concepts in concept_mappings.items():
+        if re.search(pattern, query_lower):
+            concepts.extend(related_concepts)
+    
+    return list(set(concepts))
+
+
 def enhance_query_for_code_search(query: str) -> str:
-    """Enhance user query to improve code search relevance."""
+    """Enhance user query to match document embedding format.
+    
+    Aligns query format with how documents are embedded:
+    - Documents have: Description, Concepts, Type, Name, Language, Code
+    - Query should match these semantic fields
+    """
     query = query.strip()
     query_lower = query.lower()
     
-    # Skip enhancement if query already looks like code or is very specific
-    code_indicators = ["def ", "class ", "function ", "import ", "const ", "var ", "let "]
+    # If query looks like code, search for it directly
+    code_indicators = ["def ", "class ", "function ", "import ", "const ", "var ", "let ", "=>", "->"]
     if any(indicator in query_lower for indicator in code_indicators):
-        return query
+        return f"Code: {query}"
     
-    # Enhance natural language queries
-    return f"Find code that implements or handles: {query}"
+    # Extract concepts from query
+    concepts = extract_query_concepts(query)
+    
+    # Build enhanced query that matches document format
+    parts = [f"Description: {query}"]
+    
+    if concepts:
+        parts.append(f"Concepts: {', '.join(concepts)}")
+    
+    # Add the original query for direct matching
+    parts.append(f"Search: {query}")
+    
+    return "\n".join(parts)
 
 
 def extract_repo_name(repo_url: str) -> str:
