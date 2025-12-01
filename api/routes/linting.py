@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from ...core.database import get_db_session
-from ...core.database.models import LintingIssue, Repository
-from ...utils.logger import get_logger
+from core.database import get_db_session
+from core.database.models import LintingIssue, Repository
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/linting", tags=["linting"])

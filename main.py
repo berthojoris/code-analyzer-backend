@@ -4,18 +4,11 @@ from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
 
-from api.routes import index, query, analysis, linting, quality
+# Import all route modules
+from api.routes import index, query, analysis, linting, quality, security
 from utils.logger import get_logger
 from core.config import settings
 from core.database import initialize_database
-from contextlib import asynccontextmanager
-import os
-
-from dotenv import load_dotenv
-
-from api.routes import index, query
-from utils.logger import get_logger
-from core.config import settings
 
 load_dotenv()
 
@@ -54,6 +47,14 @@ app.include_router(query.router, prefix="/api", tags=["search"])
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 app.include_router(linting.router, prefix="/api", tags=["linting"])
 app.include_router(quality.router, prefix="/api", tags=["quality"])
+app.include_router(security.router, prefix="/api", tags=["security"])
+
+# Add new route modules for Phase 2 & 3 features (would be uncommented when routes are created)
+# from api.routes import github, duplication, cicd, dashboard
+# app.include_router(github.router, prefix="/api", tags=["github"])
+# app.include_router(duplication.router, prefix="/api", tags=["duplication"])
+# app.include_router(cicd.router, prefix="/api", tags=["cicd"])
+# app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 
 
 @app.get("/health")

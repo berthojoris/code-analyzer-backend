@@ -7,11 +7,12 @@ import os
 import asyncio
 import json
 import subprocess
+import tempfile
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import re
 
-from .scanner import SecurityIssue, Severity
+from .models import SecurityIssue, Severity
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

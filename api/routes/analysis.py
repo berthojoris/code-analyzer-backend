@@ -10,11 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from ...core.config import settings
-from ...core.database import get_db_session
-from ...core.database.models import Repository, LintingIssue, QualityMetric
-from ...core.analysis import LintingAnalyzer, QualityAnalyzer
-from ...utils.logger import get_logger
+from core.config import settings
+from core.database import get_db_session
+from core.database.models import Repository, LintingIssue, QualityMetric
+from core.analysis import LintingAnalyzer, QualityAnalyzer
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
